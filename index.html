@@ -1,0 +1,624 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e1117;--bg2:#161b24;--bg3:#1e2535;--border:#2a3245;
+  --teal:#1D9E75;--teal-light:#9FE1CB;--teal-dark:#085041;
+  --coral:#D85A30;--amber:#BA7517;
+  --text:#e8ecf4;--text2:#8b95a8;--text3:#3a4a60;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans,system-ui,sans-serif)}
+#app{padding:.75rem;max-width:700px;margin:0 auto;display:flex;flex-direction:column;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;margin-bottom:10px}
+.stat-card{background:var(--bg3);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:3px}
+.stat-val{font-size:22px;font-weight:500;color:var(--text)}
+.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;margin-bottom:8px}
+.ctrl-btn{background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:12px;cursor:pointer;color:var(--text);transition:background .15s;white-space:nowrap}
+.ctrl-btn:hover{background:#253045}
+.ctrl-btn.primary{background:var(--teal);border-color:var(--teal-dark);color:#fff}
+.ctrl-btn.primary:hover{background:#0F6E56}
+.shape-row{display:flex;gap:7px;width:100%;margin-bottom:10px;flex-wrap:wrap}
+.shape-btn{flex:1;min-width:60px;background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:7px 6px;font-size:11px;cursor:pointer;color:var(--text2);transition:all .15s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px}
+.shape-btn:hover{background:#253045;color:var(--text)}
+.shape-btn.active{background:#0a2e22;border-color:var(--teal);color:var(--teal-light)}
+.shape-icon{font-size:16px;line-height:1}
+.arena{position:relative;width:100%;border-radius:14px;border:0.5px solid var(--border);overflow:hidden;background:var(--bg2);margin-bottom:10px}
+.arena-inner{position:absolute;inset:0}
+.center-hub{position:absolute;background:var(--bg3);border:0.5px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.center-title{color:var(--text2);font-weight:500}
+.nurse-dot{position:absolute;z-index:20;display:flex;flex-direction:column;align-items:center;pointer-events:none;transform:translate(-50%,-130%)}
+.nurse-icon{color:var(--teal)}
+.nurse-lbl{font-size:9px;color:var(--teal);font-weight:500;margin-top:-1px;white-space:nowrap}
+.bed-btn{position:absolute;transform:translate(-50%,-50%);border-radius:50%;border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:600;transition:border-color .18s,background .18s,box-shadow .18s;z-index:10;color:var(--text2)}
+.bed-btn.empty{border-style:dashed;color:var(--text3)}
+.bed-btn.empty:hover{border-color:var(--teal);color:var(--teal);background:#0F6E5620}
+.bed-btn.heavy{background:#3a1a0e;border-color:var(--coral);color:#F5C4B3}
+.bed-btn.light{background:#0a2e22;border-color:var(--teal);color:var(--teal-light)}
+.bed-btn.target{animation:pulse-t .75s ease-in-out infinite alternate}
+.bed-btn.current{box-shadow:0 0 0 3px var(--teal),0 0 12px rgba(29,158,117,.35);border-color:var(--teal)}
+.bed-btn.scan{animation:pulse-scan .4s ease-in-out infinite alternate}
+@keyframes pulse-t{from{box-shadow:0 0 0 2px var(--teal)}to{box-shadow:0 0 0 8px rgba(29,158,117,.25)}}
+@keyframes pulse-scan{from{box-shadow:0 0 0 2px var(--amber)}to{box-shadow:0 0 0 8px rgba(186,117,23,.3)}}
+.connector-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.info-bar{background:var(--bg3);border:0.5px solid var(--border);border-radius:10px;padding:11px 16px;width:100%;margin-bottom:9px;min-height:52px}
+.info-title{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.m-val{font-size:24px;font-weight:500;color:var(--teal)}
+.no-sol{color:var(--coral);font-weight:500;font-size:13px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2);width:100%;margin-bottom:9px}
+.lg-item{display:flex;align-items:center;gap:4px}
+.lg-dot{width:12px;height:12px;border-radius:50%;border:1.5px solid;flex-shrink:0}
+.log{background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:9px 13px;font-size:11px;color:var(--text2);max-height:68px;overflow-y:auto;line-height:1.75;width:100%}
+.log-title{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;width:100%}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:var(--bg3);border-radius:14px;border:0.5px solid var(--border);padding:20px;width:240px}
+.modal-title{font-size:14px;font-weight:500;margin-bottom:6px;color:var(--text)}
+.modal-sub{font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.5}
+.modal-btns{display:flex;gap:10px}
+.mbtn{flex:1;padding:11px 0;border-radius:8px;border:1.5px solid;cursor:pointer;font-size:14px;font-weight:600;transition:filter .15s}
+.mbtn:hover{filter:brightness(1.15)}
+.mbtn.O{background:#3a1a0e;border-color:var(--coral);color:#F5C4B3}
+.mbtn.X{background:#0a2e22;border-color:var(--teal);color:var(--teal-light)}
+.mcancel{width:100%;margin-top:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;color:var(--text2)}
+.mcancel:hover{background:var(--bg2)}
+.conflict-modal{background:var(--bg3);border-radius:14px;border:0.5px solid var(--border);padding:22px;width:280px}
+.conflict-title{font-size:15px;font-weight:500;margin-bottom:8px;color:var(--text)}
+.conflict-body{font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:16px}
+.conflict-opts{display:flex;flex-direction:column;gap:8px}
+.copt{background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:10px 13px;cursor:pointer;font-size:12px;color:var(--text);text-align:left;transition:background .15s}
+.copt:hover{background:#253045}
+.copt .copt-label{font-weight:500;font-size:13px;margin-bottom:2px}
+.copt .copt-desc{font-size:11px;color:var(--text2)}
+</style>
+
+<div id="app">
+  <div class="stats">
+    <div class="stat-card"><div class="stat-label">目前人數</div><div class="stat-val" id="s-total">0</div></div>
+    <div class="stat-card"><div class="stat-label">重傷 O</div><div class="stat-val" id="s-heavy">0</div></div>
+    <div class="stat-card"><div class="stat-label">輕傷 X</div><div class="stat-val" id="s-light">0</div></div>
+  </div>
+  <div class="controls">
+    <button class="ctrl-btn" id="btn-add-bed">＋ 新增床位</button>
+    <button class="ctrl-btn" id="btn-show-m">計算最優 M</button>
+    <button class="ctrl-btn primary" id="btn-step">執行一步</button>
+  </div>
+  <div class="shape-row" id="shape-row">
+    <button class="shape-btn active" data-shape="circle"><span class="shape-icon">⬤</span>圓形</button>
+    <button class="shape-btn" data-shape="square"><span class="shape-icon">■</span>方形</button>
+    <button class="shape-btn" data-shape="triangle"><span class="shape-icon">▲</span>三角形</button>
+    <button class="shape-btn" data-shape="diamond"><span class="shape-icon">◆</span>菱形</button>
+    <button class="shape-btn" data-shape="pentagon"><span class="shape-icon">⬠</span>五邊形</button>
+    <button class="shape-btn" data-shape="hexagon"><span class="shape-icon">⬡</span>六邊形</button>
+    <button class="shape-btn" data-shape="star"><span class="shape-icon">★</span>星形</button>
+  </div>
+  <div class="legend">
+    <div class="lg-item"><div class="lg-dot" style="background:#3a1a0e;border-color:#D85A30"></div>重症 O</div>
+    <div class="lg-item"><div class="lg-dot" style="background:#0a2e22;border-color:#1D9E75"></div>輕症 X</div>
+    <div class="lg-item"><div class="lg-dot" style="background:#0a2e22;border-color:#1D9E75;box-shadow:0 0 0 2px #1D9E75"></div>醫護位置</div>
+    <div class="lg-item"><div class="lg-dot" style="background:#0a2e22;border-color:#1D9E75;animation:pulse-t .75s ease-in-out infinite alternate"></div>下一目標</div>
+    <div class="lg-item"><div class="lg-dot" style="background:#2a1a06;border-color:#BA7517;animation:pulse-scan .4s ease-in-out infinite alternate"></div>系統掃描中</div>
+  </div>
+  <div class="arena" id="arena">
+    <div class="arena-inner" id="arena-inner">
+      <svg class="connector-svg" id="connector-svg"></svg>
+      <div class="center-hub" id="center-hub"><div class="center-title" id="center-title-text">醫療<br>臨時中心</div></div>
+      <div class="nurse-dot" id="nurse" style="display:none">
+        <i class="ti ti-user-heart nurse-icon" id="nurse-icon"></i>
+        <span class="nurse-lbl">醫護</span>
+      </div>
+    </div>
+  </div>
+  <div class="info-bar">
+    <div class="info-title">系統狀態</div>
+    <div id="info-content" style="color:var(--text2);font-size:13px">請新增床位並填入患者，然後點擊「計算最優 M」</div>
+  </div>
+  <div class="log-title">操作記錄</div>
+  <div class="log" id="log">等待操作…</div>
+</div>
+
+<div id="modal" style="display:none" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">選擇患者類型</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-btns">
+      <button class="mbtn O" id="modal-O">O 重症</button>
+      <button class="mbtn X" id="modal-X">X 輕症</button>
+    </div>
+    <button class="mcancel" id="modal-cancel">取消</button>
+  </div>
+</div>
+
+<div id="conflict-modal" style="display:none" class="modal-overlay">
+  <div class="conflict-modal">
+    <div class="conflict-title">⚠ 無法找到安全路徑</div>
+    <div class="conflict-body" id="conflict-body"></div>
+    <div class="conflict-opts">
+      <button class="copt" id="copt-swap">
+        <div class="copt-label">🔄 自動調換衝突患者</div>
+        <div class="copt-desc">找出最少需調換的 X 與 O，互換類型使路徑可行</div>
+      </button>
+      <button class="copt" id="copt-remove-blocker">
+        <div class="copt-label">🗑 移除阻擋的輕症患者</div>
+        <div class="copt-desc">將造成衝突的輕症 X 移除，醫護從下一位繼續巡視</div>
+      </button>
+      <button class="copt" id="copt-cancel">
+        <div class="copt-label" style="color:var(--text2)">取消，保持現狀</div>
+        <div class="copt-desc">不做任何更動，手動調整後重新計算</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let beds=[], patients=[], currentIdx=-1, computedM=-1, pendingBedIdx=-1, stepCount=0, logLines=[], mFailed=false, currentShape='circle', scanAnimFrame=null;
+
+function addLog(msg){logLines.unshift(msg);if(logLines.length>40)logLines.pop();document.getElementById('log').innerHTML=logLines.join('<br>');}
+function getActive(){return patients.filter(p=>p!==null);}
+
+
+class PatientNode {
+  constructor(bedIdx, type) {
+    this.bedIdx = bedIdx; 
+    this.type = type;
+    this.next = null;
+  }
+}
+
+function buildCircularList(activePatients) {
+  if (activePatients.length === 0) return null;
+  
+  let head = new PatientNode(activePatients[0].bedIdx, activePatients[0].type);
+  let current = head;
+  
+  for (let i = 1; i < activePatients.length; i++) {
+    let newNode = new PatientNode(activePatients[i].bedIdx, activePatients[i].type);
+    current.next = newNode;
+    current = newNode;
+  }
+  current.next = head; //環狀結構
+  return head;
+}
+
+// Get the active-array index of currentIdx
+function getCurrentActiveIdx(){
+  if(currentIdx<0)return 0;
+  const a=getActive();
+  const f=a.findIndex(p=>p.bedIdx===currentIdx);
+  return f<0?0:f;
+}
+
+// After removing a node at activeIdx, advance to the next node in the ring
+// (which is now at activeIdx % remaining.length after splice)
+function getNextBedIdxAfterRemoval(removedBedIdx, remaining){
+  if(remaining.length===0)return -1;
+  // find where the removed node was in the old active list
+  // remaining already has it spliced out; the node that "slides in" is at the same index
+  // we stored removedActiveIdx before removal — use it
+  return null; // caller handles with stored index
+}
+
+
+function computeMFn(startActiveIdx, active){
+  if(!active || active.length === 0) return -1;
+  const xCount = active.filter(p => p.type === 'X').length;
+  if(xCount === 0) return -1;
+  
+  const n = active.length;
+  const limit = n * n + n + 2;
+  
+  // 外層迴圈：從 m = 1 開始逐一遞增嘗試
+  for(let m = 1; m <= limit; m++){
+    let head = buildCircularList(active);
+    // 將當前巡視指標移動到指定的醫護起始位置
+    let current = head;
+    for (let i = 0; i < startActiveIdx; i++) {
+      current = current.next;
+    }
+    let ok = true;
+    let currentXCount = xCount;
+
+    // 內層迴圈：執行輕症節點的模擬剔除
+    for(let step = 0; step < currentXCount; step++){
+      // 核心邏輯：在環上模擬執行 m - 1 次指標前移找尋第 m 個落點
+      let prev = null;
+      for(let i = 0; i < m - 1; i++){
+        prev = current;
+        current = current.next;
+      }
+      if(current.type !== 'X'){
+        ok = false;
+        break;
+      }
+
+      if (prev === null) {
+        prev = current;
+        while (prev.next !== current) {
+          prev = prev.next;
+        }
+      }
+      prev.next = current.next;
+      current = current.next;
+    } // 內層 step 迴圈結束
+
+    if(ok) return m;
+  } // 外層 m 迴圈結束
+  return -1;
+}
+
+function findBestStart(active){
+  if(!active||active.length===0)return null;
+  if(active.filter(p=>p.type==='X').length===0)return null;
+  for(let i=0;i<active.length;i++){
+    const m=computeMFn(i,active);
+    if(m>0)return{m,startBedIdx:active[i].bedIdx,activeIdx:i};
+  }
+  return null;
+}
+
+function findTarget(){
+  const active=getActive();
+  if(active.length===0||computedM<0)return -1;
+  const cur=getCurrentActiveIdx();
+  return active[(cur+computedM-1)%active.length].bedIdx;
+}
+
+function findBlockerBedIds(active){
+  const n = active.length, limit = n * n + n + 2;
+  const blockerActiveIdxSet = new Set();
+  const xCount = active.filter(p => p.type === 'X').length;
+  
+  for(let m = 1; m <= limit; m++){
+    let head = buildCircularList(active);
+    let current = head;
+    
+    for(let step = 0; step < xCount; step++){
+      let prev = null;
+      for(let i = 0; i < m - 1; i++){
+        prev = current;
+        current = current.next;
+      }
+      const ai = active.findIndex(p => p.bedIdx === current.bedIdx);
+      
+      if(current.type !== 'X'){
+        if(ai >= 0) blockerActiveIdxSet.add(ai);
+        break;
+      }
+      
+      if (prev === null) {
+        prev = current;
+        while (prev.next !== current) { prev = prev.next; }
+      }
+      prev.next = current.next;
+      current = current.next;
+    }
+  }
+  const blockerBedIds = new Set();
+  for(const ai of blockerActiveIdxSet){
+    const n2 = active.length;
+    const prev = (ai - 1 + n2) % n2, next = (ai + 1) % n2;
+    if(active[prev] && active[prev].type === 'X') blockerBedIds.add(active[prev].bedIdx);
+    if(active[next] && active[next].type === 'X') blockerBedIds.add(active[next].bedIdx);
+  }
+  if(blockerBedIds.size === 0){
+    active.filter(p => p.type === 'X').forEach(p => blockerBedIds.add(p.bedIdx));
+  }
+  return [...blockerBedIds].filter(bedId => patients[bedId] && patients[bedId].type === 'X');
+}
+
+function getPositions(shape,n,W,H){
+  const cx=W/2,cy=H/2,R=Math.min(W,H)*0.38;
+  if(n===0)return[];
+  const along=(corners,t)=>{
+    const c=corners.length,seg=t*c,s=Math.floor(seg)%c,f=seg-Math.floor(seg);
+    const a=corners[s],b=corners[(s+1)%c];
+    return{x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f};
+  };
+  if(shape==='circle')return Array.from({length:n},(_,i)=>{const a=(2*Math.PI*i/n)-Math.PI/2;return{x:cx+R*Math.cos(a),y:cy+R*Math.sin(a)};});
+  let corners;
+  if(shape==='square'){const s=R*1.55;corners=[{x:cx-s/2,y:cy-s/2},{x:cx+s/2,y:cy-s/2},{x:cx+s/2,y:cy+s/2},{x:cx-s/2,y:cy+s/2}];}
+  else if(shape==='triangle')corners=Array.from({length:3},(_,i)=>{const a=(2*Math.PI*i/3)-Math.PI/2;return{x:cx+R*1.1*Math.cos(a),y:cy+R*1.1*Math.sin(a)};});
+  else if(shape==='diamond')corners=[{x:cx,y:cy-R*1.15},{x:cx+R,y:cy},{x:cx,y:cy+R*1.15},{x:cx-R,y:cy}];
+  else if(shape==='pentagon')corners=Array.from({length:5},(_,i)=>{const a=(2*Math.PI*i/5)-Math.PI/2;return{x:cx+R*1.05*Math.cos(a),y:cy+R*1.05*Math.sin(a)};});
+  else if(shape==='hexagon')corners=Array.from({length:6},(_,i)=>{const a=(2*Math.PI*i/6)-Math.PI/2;return{x:cx+R*1.05*Math.cos(a),y:cy+R*1.05*Math.sin(a)};});
+  else if(shape==='star'){
+    const pts=[];for(let i=0;i<10;i++){const a=(Math.PI*i/5)-Math.PI/2,r=i%2===0?R*1.05:R*0.45;pts.push({x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)});}
+    corners=pts;
+  }
+  return Array.from({length:n},(_,i)=>along(corners,i/n));
+}
+
+function getBedSize(n,W,H){
+  if(n===0)return 34;
+  const pos=getPositions(currentShape,n,W,H);
+  let pathLen=0;
+  for(let i=0;i<n;i++){const a=pos[i],b=pos[(i+1)%n];pathLen+=Math.hypot(b.x-a.x,b.y-a.y);}
+  return Math.max(22,Math.min(42,(pathLen/n)*0.7));
+}
+
+function setArenaHeight(){const a=document.getElementById('arena');if(a) a.style.height=a.clientWidth+'px';}
+
+function drawConnectors(positions){
+  const svg=document.getElementById('connector-svg');svg.innerHTML='';
+  if(positions.length<2)return;
+  for(let i=0;i<positions.length;i++){
+    const a=positions[i],b=positions[(i+1)%positions.length];
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);
+    line.setAttribute('x2',b.x);line.setAttribute('y2',b.y);
+    line.setAttribute('stroke','#2a3245');line.setAttribute('stroke-width','1');
+    line.setAttribute('stroke-dasharray','4 4');
+    svg.appendChild(line);
+  }
+}
+
+function render(highlightScanBedIdx){
+  setArenaHeight();
+  const ai=document.getElementById('arena-inner');
+  ai.querySelectorAll('.bed-btn').forEach(b=>b.remove());
+  const arena=document.getElementById('arena');
+  const W=arena.clientWidth,H=arena.clientHeight,cx=W/2,cy=H/2;
+  const n=beds.length;
+  const positions=getPositions(currentShape,n,W,H);
+  const bSize=getBedSize(n,W,H);
+  const fontSize=Math.max(10,bSize*0.38);
+  drawConnectors(positions);
+  const hub=document.getElementById('center-hub');
+  const hubSize=Math.min(W,H)*0.28;
+  hub.style.width=hubSize+'px';hub.style.height=hubSize+'px';
+  hub.style.left=(cx-hubSize/2)+'px';hub.style.top=(cy-hubSize/2)+'px';
+  hub.style.marginLeft='0';hub.style.marginTop='0';
+  document.getElementById('center-title-text').style.fontSize=Math.max(9,hubSize*0.115)+'px';
+  const active=getActive();
+  const tgt=computedM>0?findTarget():-1;
+  beds.forEach((_,i)=>{
+    if(i>=positions.length)return;
+    const{x:bx,y:by}=positions[i];
+    const btn=document.createElement('button');
+    btn.className='bed-btn';
+    btn.style.left=bx+'px';btn.style.top=by+'px';
+    btn.style.width=bSize+'px';btn.style.height=bSize+'px';
+    btn.style.fontSize=fontSize+'px';
+    const p=patients[i];
+    if(p===null){
+      btn.className='bed-btn empty';btn.textContent='+';
+      btn.onclick=()=>openModal(i);
+    } else {
+      btn.classList.add(p.type==='O'?'heavy':'light');
+      btn.textContent=p.type;
+      if(i===currentIdx)btn.classList.add('current');
+      if(i===tgt&&tgt!==currentIdx)btn.classList.add('target');
+      if(highlightScanBedIdx!==undefined&&i===highlightScanBedIdx)btn.classList.add('scan');
+      btn.onclick=()=>selectBed(i);
+    }
+    ai.appendChild(btn);
+  });
+  const nurse=document.getElementById('nurse');
+  if(currentIdx>=0&&currentIdx<positions.length&&patients[currentIdx]!==null){
+    const{x:nx,y:ny}=positions[currentIdx];
+    nurse.style.display='flex';nurse.style.left=nx+'px';nurse.style.top=ny+'px';
+    document.getElementById('nurse-icon').style.fontSize=Math.max(14,bSize*0.65)+'px';
+  } else nurse.style.display='none';
+  const total=active.length,heavy=active.filter(p=>p.type==='O').length,light=active.filter(p=>p.type==='X').length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-heavy').textContent=heavy;
+  document.getElementById('s-light').textContent=light;
+}
+
+function updateInfo(){
+  const info=document.getElementById('info-content');
+  const active=getActive();
+  if(active.length===0){info.innerHTML='請新增床位並填入患者';return;}
+  if(computedM<0&&!mFailed){info.innerHTML='點擊「計算最優 M」來取得巡視頻率';return;}
+  if(mFailed){info.innerHTML='<span class="no-sol">⚠ 所有起點均無解 — 已開啟衝突處理對話框</span>';return;}
+  const tgt=findTarget();
+  if(tgt<0){
+    if(active.filter(p=>p.type==='X').length===0)info.innerHTML='<span style="color:var(--teal);font-weight:500">✓ 所有輕症患者已全數移除！</span>';
+    else info.innerHTML='<span class="no-sol">⚠ 找不到安全 M 值</span>';
+    return;
+  }
+  const tgtType=patients[tgt]?.type;
+  info.innerHTML=`<span class="m-val">M = ${computedM}</span><br><span style="color:var(--text2);font-size:12px">每隔 ${computedM} 步移除一位輕症。下一目標：床位 ${tgt+1}（${tgtType==='X'?'<span style="color:var(--teal)">輕症 X ✓</span>':'<span style="color:var(--coral)">重症 O ✗</span>'}）</span>`;
+}
+
+function animateScan(active,onDone){
+  if(active.length===0){onDone(null);return;}
+  let i=0;
+  function step(){
+    if(i>=active.length){render();onDone(null);return;}
+    const bedIdx=active[i].bedIdx;
+    render(bedIdx);
+    const m=computeMFn(i,active);
+    if(m>0){setTimeout(()=>{render();onDone({m,startBedIdx:bedIdx,activeIdx:i});},350);return;}
+    i++;
+    scanAnimFrame=setTimeout(step,120);
+  }
+  step();
+}
+
+function tryAutoResolve(){
+  const active=getActive();
+  if(active.length===0)return;
+  addLog('系統自動掃描所有起點…');
+  animateScan(active,(result)=>{
+    if(result){
+      currentIdx=result.startBedIdx;computedM=result.m;mFailed=false;
+      addLog(`✓ 自動找到起點：床位 ${currentIdx+1}，M = ${computedM}`);
+      render();updateInfo();
+    } else {
+      mFailed=true;
+      addLog('✗ 所有起點均無解，開啟衝突處理對話框');
+      render();updateInfo();
+      openConflictModal(active);
+    }
+  });
+}
+
+function openConflictModal(active){
+  const xCount=active.filter(p=>p.type==='X').length;
+  const oCount=active.filter(p=>p.type==='O').length;
+  document.getElementById('conflict-body').textContent=
+    `當前共 ${active.length} 位患者（重症 O: ${oCount}，輕症 X: ${xCount}）。在所有 ${active.length} 個起點下均找不到安全的巡視頻率 M。請選擇處理方式：`;
+  document.getElementById('conflict-modal').style.display='flex';
+}
+
+document.getElementById('copt-swap').onclick=()=>{
+  document.getElementById('conflict-modal').style.display='none';
+  const active=getActive();
+  const xIndices=active.map((p,i)=>p.type==='X'?i:-1).filter(i=>i>=0);
+  const oIndices=active.map((p,i)=>p.type==='O'?i:-1).filter(i=>i>=0);
+  let found=false;
+  for(let xi=0;xi<xIndices.length&&!found;xi++){
+    for(let oi=0;oi<oIndices.length&&!found;oi++){
+      const testActive=active.map(p=>({...p}));
+      testActive[xIndices[xi]].type='O';testActive[oIndices[oi]].type='X';
+      const m=computeMFn(0,testActive);
+      if(m>0){
+        const xBed=active[xIndices[xi]].bedIdx,oBed=active[oIndices[oi]].bedIdx;
+        patients[xBed].type='O';patients[oBed].type='X';
+        computedM=m;mFailed=false;currentIdx=active[0].bedIdx;
+        addLog(`🔄 調換床位 ${xBed+1}(X→O) 與 ${oBed+1}(O→X)，新 M = ${m}`);
+        found=true;
+      }
+    }
+  }
+  if(!found){addLog('調換策略無效，改為移除阻擋患者');removeBlockers();}
+  else{render();updateInfo();}
+};
+
+document.getElementById('conflict-modal').style.display='none';
+document.getElementById('copt-remove-blocker').onclick=()=>{
+  document.getElementById('conflict-modal').style.display='none';
+  removeBlockers();
+};
+
+function removeBlockers(){
+  const active=getActive();
+  if(active.length===0){render();updateInfo();return;}
+  const blockerBedIds=findBlockerBedIds(active);
+  const validBlockers=blockerBedIds.filter(bedId=>patients[bedId]&&patients[bedId].type==='X');
+  let removedBedIdx=-1;
+  let removedActiveIdx=-1;
+  if(validBlockers.length===0){
+    const firstX=active.find(p=>p.type==='X');
+    if(firstX){
+      removedBedIdx=firstX.bedIdx;
+      removedActiveIdx=active.findIndex(p=>p.bedIdx===firstX.bedIdx);
+    }
+  } else {
+    removedBedIdx=validBlockers[0];
+    removedActiveIdx=active.findIndex(p=>p.bedIdx===removedBedIdx);
+  }
+  if(removedBedIdx<0){render();updateInfo();return;}
+  patients[removedBedIdx]=null;
+  addLog(`🗑 移除阻擋輕症患者（床位 ${removedBedIdx+1}）`);
+  const remaining=getActive();
+  if(remaining.length===0){currentIdx=-1;computedM=-1;mFailed=false;render();updateInfo();return;}
+  const nextActiveIdx = removedActiveIdx % remaining.length;
+  currentIdx = remaining[nextActiveIdx].bedIdx;
+  const newM=computeMFn(nextActiveIdx, remaining);
+  if(newM>0){
+    computedM=newM;mFailed=false;
+    addLog(`繼續前進至床位 ${currentIdx+1}，重算 M = ${newM}`);
+  } else {
+    computedM=-1;mFailed=false;
+    addLog(`繼續前進至床位 ${currentIdx+1}，自動掃描新起點…`);
+    tryAutoResolve();return;
+  }
+  render();updateInfo();
+}
+
+document.getElementById('copt-cancel').onclick=()=>{
+  document.getElementById('conflict-modal').style.display='none';
+  mFailed=false;addLog('保持現狀');render();updateInfo();
+};
+
+function openModal(bedIdx){
+  pendingBedIdx=bedIdx;
+  document.getElementById('modal-title').textContent=`床位 ${bedIdx+1} — 選擇患者類型`;
+  document.getElementById('modal-sub').textContent='';
+  document.getElementById('modal').style.display='flex';
+}
+document.getElementById('modal-O').onclick=()=>{addPatient(pendingBedIdx,'O');closeModal();};
+document.getElementById('modal-X').onclick=()=>{addPatient(pendingBedIdx,'X');closeModal();};
+document.getElementById('modal-cancel').onclick=()=>closeModal();
+function closeModal(){document.getElementById('modal').style.display='none';}
+
+function addPatient(bedIdx,type){
+  if(patients[bedIdx]!==null)return;
+  patients[bedIdx]={type,bedIdx};
+  if(currentIdx<0)currentIdx=bedIdx;
+  computedM=-1;mFailed=false;
+  addLog(`床位 ${bedIdx+1} 新增 ${type==='O'?'重症 O':'輕症 X'}`);
+  render();updateInfo();
+}
+
+function selectBed(bedIdx){
+  if(patients[bedIdx]===null)return;
+  if(currentIdx===bedIdx)return;
+  currentIdx=bedIdx;mFailed=false;
+  const active=getActive();
+  if(active.filter(p=>p.type==='X').length>0){
+    const newM=computeMFn(getCurrentActiveIdx(),active);
+    if(newM>0){computedM=newM;addLog(`醫護移至床位 ${bedIdx+1}，M = ${computedM}`);}
+    else{computedM=-1;addLog(`醫護移至床位 ${bedIdx+1}，此起點無解，自動掃描中…`);tryAutoResolve();return;}
+  } else {computedM=-1;addLog(`醫護移至床位 ${bedIdx+1}`);}
+  render();updateInfo();
+}
+
+document.getElementById('btn-add-bed').onclick=function(){
+  beds.push(null);patients.push(null);computedM=-1;mFailed=false;
+  addLog(`新增空床位，共 ${beds.length} 個`);render();updateInfo();
+};
+
+document.getElementById('btn-show-m').onclick=function(){
+  const active=getActive();
+  if(active.length===0){addLog('尚無患者');return;}
+  if(active.filter(p=>p.type==='X').length===0){addLog('無輕症患者');computedM=-1;mFailed=false;render();updateInfo();return;}
+  const m=computeMFn(getCurrentActiveIdx(),active);
+  if(m>0){computedM=m;mFailed=false;stepCount=0;addLog(`M = ${computedM}`);}
+  else{addLog('當前起點無解，自動掃描其他起點…');tryAutoResolve();return;}
+  render();updateInfo();
+};
+
+document.getElementById('btn-step').onclick=function(){
+  const active=getActive();
+  if(active.length===0){addLog('尚無患者');return;}
+  if(computedM<0){addLog('請先計算 M 值');return;}
+  if(active.filter(p=>p.type==='X').length===0){addLog('✓ 所有輕症已移除');return;}
+  const tgt=findTarget();
+  if(tgt<0){addLog('⚠ 找不到目標');return;}
+  const p=patients[tgt];
+  if(p&&p.type==='X'){
+    const tgtActiveIdx = active.findIndex(a=>a.bedIdx===tgt);
+    patients[tgt]=null;
+    addLog(`✓ 移除床位 ${tgt+1} 輕症 X（步驟 ${++stepCount}）`);
+    const remaining=getActive();
+    if(remaining.length===0){currentIdx=-1;computedM=-1;mFailed=false;render();updateInfo();return;}
+    const nextActiveIdx = tgtActiveIdx % remaining.length;
+    currentIdx = remaining[nextActiveIdx].bedIdx;
+    if(remaining.filter(p=>p.type==='X').length>0){
+      const newM=computeMFn(nextActiveIdx, remaining);
+      if(newM>0){computedM=newM;addLog(`重算 M = ${computedM}`);}
+      else{addLog('當前起點無解，自動掃描…');computedM=-1;mFailed=false;tryAutoResolve();return;}
+    } else {computedM=-1;mFailed=false;}
+  } else {
+    addLog(`⚠ 目標床位 ${tgt+1} 為重症！`);computedM=-1;
+  }
+  render();updateInfo();
+};
+
+document.getElementById('shape-row').querySelectorAll('.shape-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');currentShape=btn.dataset.shape;
+    computedM=-1;mFailed=false;
+    addLog(`切換形狀：${btn.textContent.trim()}`);render();updateInfo();
+  };
+});
+
+beds=Array(8).fill(null);patients=Array(8).fill(null);
+setArenaHeight();render();updateInfo();
+addLog('系統已初始化，8 個空床位就緒');
+const ro=new ResizeObserver(()=>{setArenaHeight();render();});
+ro.observe(document.getElementById('arena'));
+</script>
